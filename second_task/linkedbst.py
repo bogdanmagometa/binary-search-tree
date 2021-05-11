@@ -8,6 +8,8 @@ from bstnode import BSTNode
 from linkedstack import LinkedStack
 # from linkedqueue import LinkedQueue
 from math import log
+import random
+import time
 
 
 class LinkedBST(AbstractCollection):
@@ -79,19 +81,31 @@ class LinkedBST(AbstractCollection):
 
     def find(self, item):
         """If item matches an item in self, returns the
-        matched item, or None otherwise."""
+        matched item, or None otherwise.
 
-        def recurse(node):
-            if node is None:
-                return None
-            elif item == node.data:
-                return node.data
-            elif item < node.data:
-                return recurse(node.left)
+        >>> bst = LinkedBST()
+        >>> bst.find(-1) is None
+        True
+        >>> bst.add(1)
+        >>> bst.find(1)
+        1
+        >>> bst.add(2)
+        >>> bst.find(2)
+        2
+        >>> bst.find(3) is None
+        True
+        """
+
+        curr = self._root
+        while curr is not None:
+            if curr.data == item:
+                return curr.data
+            elif item < curr.data:
+                curr = curr.left
             else:
-                return recurse(node.right)
+                curr = curr.right
 
-        return recurse(self._root)
+        return None
 
     # Mutator methods
     def clear(self):
@@ -102,28 +116,23 @@ class LinkedBST(AbstractCollection):
     def add(self, item):
         """Adds item to the tree."""
 
-        # Helper function to search for item's position
-        def recurse(node):
-            # New item is less, go left until spot is found
-            if item < node.data:
-                if node.left == None:
-                    node.left = BSTNode(item)
-                else:
-                    recurse(node.left)
-            # New item is greater or equal,
-            # go right until spot is found
-            elif node.right == None:
-                node.right = BSTNode(item)
-            else:
-                recurse(node.right)
-                # End of recurse
-
         # Tree is empty, so new item goes at the root
         if self.isEmpty():
             self._root = BSTNode(item)
         # Otherwise, search for the item's spot
         else:
-            recurse(self._root)
+            parent = None
+            curr = self._root
+            while curr is not None:
+                parent = curr
+                if item < curr.data:
+                    curr = curr.left
+                else:
+                    curr = curr.right
+            if item < parent.data:
+                parent.left = BSTNode(item)
+            else:
+                parent.right = BSTNode(item)
         self._size += 1
 
     def remove(self, item):
@@ -471,7 +480,8 @@ class LinkedBST(AbstractCollection):
             walk = walk.right
         return walk.data
 
-    def demo_bst(self, path):
+    @staticmethod
+    def demo_bst(path):
         """
         Demonstration of efficiency binary search tree for the search tasks.
         :param path:
@@ -480,7 +490,63 @@ class LinkedBST(AbstractCollection):
         :rtype:
         """
 
+        num_random_words = 10_000
+
+        all_words = []
+        with open(path, 'r') as infile:
+            for line in infile:
+                if line:
+                    all_words.append(line)
+        all_words.sort()
+
+        random_words = random.sample(all_words, num_random_words)
+
+        # search in sorted list
+        start = time.time()
+        for word in random_words:
+            all_words.index(word)
+        end = time.time()
+        print(f"Search time of {num_random_words} words in the alphabetically-sorted list of words\
+ is {end - start} seconds.")
+
+        # search in alphabetically-ordered tree
+        word_bst = LinkedBST()
+
+        for word in all_words:
+            word_bst.add(word)
+
+        start = time.time()
+        for word in random_words:
+            word_bst.find(word)
+        end = time.time()
+        print(f"Search time of {num_random_words} words in the BST created by adding the words\
+ in alphabetical order is {end - start} seconds.")
+
+        # search in random tree
+        random.shuffle(all_words)
+        word_bst.clear()
+        for word in all_words:
+            word_bst.add(word)
+
+        start = time.time()
+        for word in random_words:
+            word_bst.find(word)
+        end = time.time()
+        print(f"Search time of {num_random_words} words in the BST created by adding the words in random order\
+ is {end - start} seconds.")
+
+        # search in balanced tree
+        word_bst.rebalance()
+        start = time.time()
+        for word in random_words:
+            word_bst.find(word)
+        end = time.time()
+        print(f"Search time of {num_random_words} words in the balanced BST\
+ is {end - start} seconds.")
+
 
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+
+    LinkedBST.demo_bst("words.txt")
